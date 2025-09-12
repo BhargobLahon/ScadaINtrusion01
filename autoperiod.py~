@@ -1,0 +1,91 @@
+import os
+import sys
+import numpy as np
+import scipy as sp
+from scipy.fftpack import fft
+from scipy.signal import blackman
+import matplotlib.pyplot as plt
+from operator import itemgetter 
+from sklearn import mixture
+from operator import truediv
+from statistics import mean
+from statistics import stdev
+from scipy import signal
+import math
+from numpy import random
+
+
+def permute(X) :
+	N = len(X)
+	permutation = [0]*N
+
+	for i in xrange(0,N) :
+		permutation[i] = X[i]
+
+	for i in xrange(0,N-1) :
+		swapIdx = np.random.randint(i,N)
+		assert swapIdx <= N-1
+		tmp = permutation[i]
+		permutation[i] = permutation[swapIdx]
+		permutation[swapIdx] = tmp
+
+	return permutation
+
+
+def getPowerSpectralDensity(X,fs=1.0):
+	assert fs > 0
+	f, Pxx_den = signal.periodogram(X, fs,scaling='density',window=None)
+	return (f,Pxx_den)
+
+def getPowerSpectralThreshold(X,nPermutations=100,fs=1.0,percentile=99) :
+	maxPower = []
+	for i in xrange(0,nPermutations) :
+		permutation = permute(X)
+		f,PWSD = getPowerSpectralDensity(permutation,fs)
+		#print "len PWSD = ", len(PWSD)
+		maxPwr = max(PWSD)
+		maxPower.append(maxPwr)
+
+	percentileIdx = nPermutations*int(percentile/100)
+	assert percentileIdx <= nPermutations - 1
+
+	return maxPower[percentileIdx]
+
+
+def getPeriodHints(X,fs=1.0) :
+	pThreshold = getPowerSpectralThreshold(X=X,nPermutations=100,fs=fs,percentile=99)
+	assert pThreshold >= 0.0
+
+	candidatePeriods = []
+	candidateIntPeriods = {}
+	f,PWSD = getPowerSpectralDensity(X,fs)
+	PWSD = np.array(PWSD)
+	N = len(X)
+	NCoeffs = len(PWSD)
+	for i in xrange(0,NCoeffs) :
+		if PWSD[i] > pThreshold :
+			candidatePeriods.append(float(1.0/f[i]))
+
+
+	#print "Init estimate = ",candidatePeriods
+	for i in xrange(0,len(candidatePeriods)) :
+		if candidatePeriods[i] >= float(N/2) or candidatePeriods[i] <= 2.0 :
+			candidatePeriods.remove(candidatePeriods[i])
+			
+
+	if len(candidatePeriods) == 0 :
+		print "Periodicity Test failed. Threshold = " , pThreshold
+		sys.exit(0)
+
+	# converting to closest integer periods 
+	nCandidatePeriods = len(candidatePeriods)
+	for i in xrange(0, nCandidatePeriods) :
+		closestIntPeriod = int(round(candidatePeriods[i],1))
+		if closestIntPeriod in candidateIntPeriods.keys() :
+			candidateIntPeriods[closestIntPeriod] = candidateIntPeriods[closestIntPeriod] + 1
+		else :
+			candidateIntPeriods[closestIntPeriod] =  1
+
+	return candidateIntPeriods,pThreshold
+	
+	
