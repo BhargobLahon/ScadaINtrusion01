@@ -19,10 +19,10 @@ def permute(X) :
 	N = len(X)
 	permutation = [0]*N
 
-	for i in xrange(0,N) :
+	for i in range(0,N) :
 		permutation[i] = X[i]
 
-	for i in xrange(0,N-1) :
+	for i in range(0,N-1) :
 		swapIdx = np.random.randint(i,N)
 		assert swapIdx <= N-1
 		tmp = permutation[i]
@@ -39,7 +39,7 @@ def getPowerSpectralDensity(X,fs=1.0):
 
 def getPowerSpectralThreshold(X,nPermutations=100,fs=1.0,percentile=99) :
 	maxPower = []
-	for i in xrange(0,nPermutations) :
+	for i in range(0,nPermutations) :
 		permutation = permute(X)
 		f,PWSD = getPowerSpectralDensity(permutation,fs)
 		#print "len PWSD = ", len(PWSD)
@@ -62,13 +62,13 @@ def getPeriodHints(X,fs=1.0) :
 	PWSD = np.array(PWSD)
 	N = len(X)
 	NCoeffs = len(PWSD)
-	for i in xrange(0,NCoeffs) :
+	for i in range(0,NCoeffs) :
 		if PWSD[i] > pThreshold :
 			candidatePeriods.append(float(1.0/f[i]))
 
 
 	#print "Init estimate = ",candidatePeriods
-	for i in xrange(0,len(candidatePeriods)) :
+	for i in range(0,len(candidatePeriods)) :
 		if candidatePeriods[i] >= float(N/2) or candidatePeriods[i] <= 2.0 :
 			candidatePeriods.remove(candidatePeriods[i])
 			
@@ -79,7 +79,7 @@ def getPeriodHints(X,fs=1.0) :
 
 	# converting to closest integer periods 
 	nCandidatePeriods = len(candidatePeriods)
-	for i in xrange(0, nCandidatePeriods) :
+	for i in range(0, nCandidatePeriods) :
 		closestIntPeriod = (round(candidatePeriods[i],1))
 		if closestIntPeriod in candidateIntPeriods.keys() :
 			candidateIntPeriods[closestIntPeriod] = candidateIntPeriods[closestIntPeriod] + 1
